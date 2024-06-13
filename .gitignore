@@ -1,0 +1,14 @@
+.vscode
+
+*.o
+*.so
+*.cpp
+*.egg-info
+eval_outputs
+ckpt
+__pycache__/
+
+data/
+results/
+test/
+*log*
