@@ -7,7 +7,7 @@
 eval_outputs
 ckpt
 __pycache__/
-
+uav_ss.code-workspace
 data/
 results/
 test/
