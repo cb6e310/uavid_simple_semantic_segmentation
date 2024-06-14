@@ -39,7 +39,6 @@ class CustomDataset(torch.utils.data.Dataset):
         
         return image, mask
 
-# 自定义的mask转换函数
 def mask_to_tensor(mask):
     mask = np.array(mask, dtype=np.int64)
     mask = torch.from_numpy(mask)
@@ -59,16 +58,13 @@ mask_transform = transforms.Compose([
 
 os.makedirs(checkpoint_dir, exist_ok=True)
 
-# 创建数据集
 train_dataset = CustomDataset(train_image_dir, train_mask_dir, image_transform=image_transform, mask_transform=mask_transform)
 eval_dataset = CustomDataset(eval_image_dir, eval_mask_dir, image_transform=image_transform, mask_transform=mask_transform)
 
-# 数据加载器
 batch_size = 8  # 
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=False)
 
-# 统计每个类别的数量
 def count_class_pixels(dataloader, num_classes=8):
     class_counts = np.zeros(num_classes)
     for _, masks in tqdm(dataloader, desc='Counting class pixels'):
@@ -77,7 +73,6 @@ def count_class_pixels(dataloader, num_classes=8):
             class_counts[c] += (masks == c).sum()
     return class_counts
 
-# 计算权重
 def calculate_weights(class_counts):
     total = class_counts.sum()
     weights = total / (len(class_counts) * class_counts)
@@ -91,23 +86,17 @@ weights = [0.00508186, 0.0031902,  0.00693815, 0.07688007, 0.00355312, 0.0066273
 # print(f'Class counts: {class_counts}')
 print(f'Weights: {weights}')
 
-# 将权重转换为Tensor
 weights = torch.tensor(weights, dtype=torch.float).cuda()
 
-# 加载模型
 model = smp.DeepLabV3Plus('resnet34', encoder_weights='imagenet', classes=8, activation=None)
 
-# 使用DataParallel将模型并行化
 model = torch.nn.DataParallel(model)
 
-# 定义优化器和加权损失函数
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 criterion = torch.nn.CrossEntropyLoss(weight=weights)
 
-# 定义学习率调度器
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
-# 训练和评估函数
 def train_and_evaluate(model, train_dataloader, eval_dataloader, optimizer, scheduler, criterion, num_epochs=20):
     for epoch in range(num_epochs):
         model.train()
@@ -145,7 +134,6 @@ def train_and_evaluate(model, train_dataloader, eval_dataloader, optimizer, sche
                 total_loss += loss.item()
                 eval_loader.set_postfix(loss=total_loss / (eval_loader.n + 1))
                 
-                # 计算IoU
                 outputs = outputs.argmax(dim=1)
                 intersection = (outputs & masks).float().sum((1, 2))
                 union = (outputs | masks).float().sum((1, 2))

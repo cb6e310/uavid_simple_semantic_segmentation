@@ -11,7 +11,6 @@ from PIL import Image
 import numpy as np
 from tqdm import tqdm
 
-# 定义数据集类
 class CustomDataset(torch.utils.data.Dataset):
     def __init__(self, image_dir, mask_dir=None, image_transform=None):
         self.image_dir = image_dir
@@ -30,35 +29,28 @@ class CustomDataset(torch.utils.data.Dataset):
         
         return image, img_path
 
-# 自定义的mask转换函数
 def mask_to_tensor(mask):
     mask = np.array(mask, dtype=np.int64)
     mask = torch.from_numpy(mask)
     return mask
 
-# 数据增强和转换
 image_transform = transforms.Compose([
     transforms.ToTensor(),
 ])
 
-# 路径配置
 os.makedirs(output_dir, exist_ok=True)
 
-# 创建数据集
 eval_dataset = CustomDataset(eval_image_dir, image_transform=image_transform)
 
-# 数据加载器
-batch_size = 1  # 由于图像较大，batch_size可以适当调整
+batch_size = 1  
 eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=False)
 
-# 加载模型
 model = smp.DeepLabV3Plus('resnet34', encoder_weights=None, classes=8, activation=None)
 model = torch.nn.DataParallel(model)
 model.load_state_dict(torch.load(checkpoint_dir))
 model = model.cuda()
 model.eval()
 
-# 预测并保存标签
 with torch.no_grad():
     for images, img_paths in tqdm(eval_dataloader, desc='Predicting'):
         images = images.cuda()
